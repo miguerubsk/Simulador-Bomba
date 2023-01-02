@@ -46,8 +46,27 @@ void setup() {
 
 void loop() {
 
-    bool hayTarjeta = NFCRead();
-    if (hayTarjeta) {
+    if (!mfrc522.PICC_IsNewCardPresent())
+        return;
+
+    if (!mfrc522.PICC_ReadCardSerial())
+        return;
+
+    Serial.print("UID:");
+    for (int i = 0; i < mfrc522.uid.size; i++) {
+        if (mfrc522.uid.uidByte[i] < 0x10) {
+            Serial.print(" 0");
+        } else {
+            Serial.print(" ");
+        }
+        Serial.print(mfrc522.uid.uidByte[i], HEX);
+        LecturaUID[i] = mfrc522.uid.uidByte[i];
+    }
+    Serial.print("\n");
+    mfrc522.PICC_HaltA();
+    
+    
+    //if (hayTarjeta) {
         int comprobacion = comprobarUID(LecturaUID);
         Serial.print("Comprobación: ");
         Serial.print(comprobacion);
@@ -62,7 +81,7 @@ void loop() {
             default:
                 break;
         }
-    }
+    //}
     // if (activa) {
     //     if (tiempo <= 0) {
     //         activa = false;
