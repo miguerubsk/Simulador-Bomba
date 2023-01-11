@@ -20,28 +20,18 @@
  * Autor: Miguel González García
  * 
  */
-#include <Wire.h> 
-#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal.h>    // importa libreria
 
-LiquidCrystal_I2C lcd(0x3F,16,2);
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2);  // pines RS, E, D4, D5, D6, D7 de modulo 1602A
 
 void setup() {
-  // put your setup code here, to run once:
-  // Inicializar el LCD
-  lcd.init();
-  
-  //Encender la luz de fondo.
-  lcd.backlight();
-  
-  // Escribimos el Mensaje en el LCD.
-  lcd.print("Fran Marica");
+  lcd.begin(16, 2);     // inicializa a display de 16 columnas y 2 lineas
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  lcd.setCursor(0, 1);
-   // Escribimos el número de segundos trascurridos
-  lcd.print(millis()/1000);
-  lcd.print(" Segundos");
-  delay(100);
+  lcd.setCursor(0, 0);      // ubica cursor en columna 0, linea 0
+  lcd.print("FRAN MARICA");  // escribe el texto en pantalla
+  lcd.setCursor(0, 1);      // ubica cursor en columna 0, linea 1
+  lcd.print(millis() / 1000);   // escribe valor en segundos devuelto por funcion millis()
+  lcd.print(" Segundos.");     // imprime a continuacion segundos
 }
