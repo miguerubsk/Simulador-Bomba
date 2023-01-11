@@ -22,7 +22,14 @@
  */
 #include <LiquidCrystal.h>    // importa libreria
 
-LiquidCrystal lcd(7, 6, 5, 4, 3, 2);  // pines RS, E, D4, D5, D6, D7 de modulo 1602A
+int rs = 7;
+int e = 6;
+int d5 = 4;
+int d4 = 5;
+int d6 = 3;
+int d7 = 2;
+
+LiquidCrystal lcd(rs, e, d4, d5, d6, d7);  // pines RS, E, D4, D5, D6, D7 de modulo 1602A
 
 void setup() {
   lcd.begin(16, 2);     // inicializa a display de 16 columnas y 2 lineas
