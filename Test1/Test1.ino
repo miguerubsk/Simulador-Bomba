@@ -23,6 +23,8 @@
 
 #include <SPI.h>      // incluye libreria bus SPI
 #include <MFRC522.h>  // incluye libreria especifica para MFRC522
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>  //Librería para controlar el LCD mediante pines I2C
 
 #define RST_PIN 9       // constante para referenciar pin de reset
 #define SS_PIN 10       // constante para referenciar pin de slave select
@@ -36,6 +38,7 @@ uint8_t desactivador[4] = {0x73, 0x35, 0xB0, 0x0E}; // UID del desactivador
 int tiempo; //Tiempo en segundos para la explosión
 boolean activa = false; //Estado por defecto de la bomba
 int ini, fin;
+LiquidCrystal_I2C lcd(0x3F, 16, 2); //Crear el objeto lcd  dirección  0x3F y 16 columnas x 2 filas
 
 void setup() {
     Serial.begin(9600); // inicializa comunicacion por monitor serie a 9600 bps
@@ -43,7 +46,12 @@ void setup() {
     mfrc522.PCD_Init(); // inicializa modulo lector
     tiempo = TIEMPO_MAX;
     ini = millis();
-    Serial.println("Listo");
+
+    lcd.init(); // Inicializar el LCD
+
+
+    lcd.backlight(); //Encender la luz de fondo.
+    lcd.print("Listo");
 }
 
 void loop() {
@@ -63,12 +71,14 @@ void loop() {
     if (activa) {
         if (tiempo <= 0) {
             activa = false;
-            Serial.println("BUUUUM!!!!!");
+            lcd.setCursor(0, 1);
+            lcd.print("BUUUUM!!!!!");
             tiempo = TIEMPO_MAX;
         } else {
             fin = millis();
             if (fin - ini >= 1000) {
-                Serial.println(tiempo--);
+                lcd.setCursor(0, 1);
+                lcd.println(tiempo--);
                 ini = fin;
             }
         }
@@ -83,18 +93,18 @@ bool NFCRead() {
 
     if (!mfrc522.PICC_ReadCardSerial())
         return false;
-
-    Serial.print("UID:");
+    lcd.setCursor(0, 0);
+    lcd.print("UID:");
     for (int i = 0; i < mfrc522.uid.size; i++) {
         if (mfrc522.uid.uidByte[i] < 0x10) {
-            Serial.print(" 0");
+            lcd.print(" 0");
         } else {
-            Serial.print(" ");
+            lcd.print(" ");
         }
-        Serial.print(mfrc522.uid.uidByte[i], HEX);
+        lcd.print(mfrc522.uid.uidByte[i], HEX);
         LecturaUID[i] = mfrc522.uid.uidByte[i];
     }
-    Serial.print("\n");
+    //Serial.print("\n");
     mfrc522.PICC_HaltA();
     return true;
 }
