@@ -24,6 +24,7 @@
 #include <SPI.h>      // incluye libreria bus SPI
 #include <Wire.h> 
 #include <Keypad.h>
+#include <String.h>
 #include <LiquidCrystal_I2C.h>  //Librería para controlar el LCD mediante pines I2C
 
 #define RST_PIN 9       // constante para referenciar pin de reset
@@ -167,21 +168,32 @@ void reset(){
   tiempo = TIEMPO_MAX;
 }
 
+bool charcmp(char input1[5], char input2[5]) {
+    for (int i = 0; i < sizeof(input1); ++i) {
+        if (input1[i] != input2[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 int comprobarClave(char input) {
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("COMPROBACION");
-    if (strcmp(input, claveDesactivacion) == 0) {
+    if (charcmp(input, claveDesactivacion)) {
         lcd.setCursor(0,0);
         lcd.clear();
         lcd.print("ACTIVACION");
         return 1;
     }
-    if (strcmp(input, claveActivacion) == 0) {
+    if (charcmp(input, claveActivacion)) {
         lcd.setCursor(0,0);
         lcd.clear();
         lcd.print("DESACTIVACION");
         return 0;
     }
+    lcd.clear();
+    lcd.print("AAAAAAAAAAAAAAAA");
     return -1;
 }
