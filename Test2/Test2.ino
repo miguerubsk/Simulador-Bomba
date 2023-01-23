@@ -64,7 +64,6 @@ void setup() {
     Serial.begin(9600); // inicializa comunicacion por monitor serie a 9600 bps
     SPI.begin(); // inicializa bus SPI
     tiempo = TIEMPO_MAX;
-    ini = millis();
     indice = 0;
     lcd.init(); // Inicializar el LCD
 
@@ -124,6 +123,8 @@ void loop() {
             case 0:
                 activa = true;
                 ini = millis();
+                lcd.setCursor(0,0);
+                lcd.print("ACTIVA");
                 break;
             case 1:
                 activa = false;
