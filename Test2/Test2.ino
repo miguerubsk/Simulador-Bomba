@@ -174,6 +174,7 @@ bool charcmp(char input1[5], char input2[5]) {
         lcd.print(input1[i]);
         lcd.print(":");
         lcd.print(input2);
+        delay(1000);
         if (input1[i] != input2[i]) {
             return false;
         }
