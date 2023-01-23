@@ -118,19 +118,22 @@ void loop() {
         lcd.print(teclaPulsada); // envia a lcd la tecla presionada
     }
 
-    if (indice >= 4) { // si ya se almacenaron los 6 digitos
+    if (indice >= 5) { // si ya se almacenaron los 6 digitos
         switch (comprobarClave(input)) {
             case 0:
                 activa = true;
                 ini = millis();
                 lcd.setCursor(0,0);
                 lcd.print("ACTIVA");
+                input = "";
                 break;
             case 1:
                 activa = false;
                 reset();
+                input = "";
                 break;
             default:
+                input = "";
                 break;
         }
         indice = 0;
@@ -163,9 +166,13 @@ void reset(){
 
 int comprobarClave(char input) {
     if (strcmp(input, claveDesactivacion) == 0) {
+        lcd.setCursor(0,0);
+        lcd.print("ACTIVACION");
         return 1;
     }
     if (strcmp(input, claveActivacion) == 0) {
+        lcd.setCursor(0,0);
+        lcd.print("DESACTIVACION");
         return 0;
     }
     return -1;
