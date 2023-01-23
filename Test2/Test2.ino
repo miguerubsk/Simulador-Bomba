@@ -54,8 +54,8 @@ uint8_t pinesColumnas[COLUMNAS] = {5, 4, 3, 2};
 Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS);
 char teclaPulsada;
 char input[5];
-char claveActivacion[5] = "CLAVE";
-char claveDesactivacion[5] = "CLAVE";
+char claveActivacion[5] = "12345";
+char claveDesactivacion[5] = "54321";
 uint8_t indice;
 
 bool first = true;
