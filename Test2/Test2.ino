@@ -170,6 +170,10 @@ void reset(){
 
 bool charcmp(char input1[5], char input2[5]) {
     for (int i = 0; i < sizeof(input1); ++i) {
+        lcd.clear();
+        lcd.print(input1[i]);
+        lcd.print(":");
+        lcd.print(input2);
         if (input1[i] != input2[i]) {
             return false;
         }
