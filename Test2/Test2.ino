@@ -44,9 +44,9 @@ LiquidCrystal_I2C lcd(0x3F, 16, 2); //Crear el objeto lcd  dirección  0x3F y 16
 const uint8_t FILAS = 4; //Número de filas del teclado
 const uint8_t COLUMNAS = 4; //Número de columnas del teclado
 char keys[FILAS][COLUMNAS] = {// define la distribucion de teclas
-    {'1', '2', '3', 'A'},
-    {'4', '5', '6', 'B'},
-    {'7', '8', '9', 'C'},
+    {'6', '5', '4', 'B'},
+    {'3', '2', '1', 'A'},
+    {'9', '8', '7', 'C'},
     {'*', '0', '#', 'D'}
 };
 uint8_t pinesFilas[FILAS] = {9, 8, 7, 6};
@@ -123,17 +123,18 @@ void loop() {
             case 0:
                 activa = true;
                 ini = millis();
+                lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print("ACTIVA");
-                input = "";
+                strcpy(input, "");
                 break;
             case 1:
                 activa = false;
                 reset();
-                input = "";
+                strcpy(input, "");
                 break;
             default:
-                input = "";
+                strcpy(input, "");
                 break;
         }
         indice = 0;
@@ -143,12 +144,14 @@ void loop() {
     if (activa) {
         if (tiempo <= 0) {
             activa = false;
+            lcd.clear();
             lcd.setCursor(0, 1);
             lcd.print("BUUUUM!!!!!");
             tiempo = TIEMPO_MAX;
         } else {
             fin = millis();
             if (fin - ini >= 1000) {
+                lcd.clear();
                 lcd.setCursor(0, 1);
                 lcd.println(tiempo--);
                 ini = fin;
@@ -165,13 +168,18 @@ void reset(){
 }
 
 int comprobarClave(char input) {
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("COMPROBACION");
     if (strcmp(input, claveDesactivacion) == 0) {
         lcd.setCursor(0,0);
+        lcd.clear();
         lcd.print("ACTIVACION");
         return 1;
     }
     if (strcmp(input, claveActivacion) == 0) {
         lcd.setCursor(0,0);
+        lcd.clear();
         lcd.print("DESACTIVACION");
         return 0;
     }
