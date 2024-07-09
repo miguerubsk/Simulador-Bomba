@@ -33,13 +33,15 @@ const int Buzzer = 10;
 const int tonos[] = {261, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494};
 const int countTonos = 10;
 const int passLength = 4;
+const long interval = 1000; // Intervalo de tiempo para los segundos
+const int AGUDO = 600;
+const int GRAVE = 100;
 
 //Variables temporizador
 int Scount = 15; // Conteo regresivo de Segundos
 int Mcount = 00; // Conteo regresivo de Minutos
 int Hcount = 00; // Conteo regresivo de Horas
-long secMillis = 0; // Guarda ultimo time para sumar segundos, referencia para llegando a fin de conteo
-long interval = 1000; // Intervalo de tiempo para los segundos
+long secMillis = 0; // Guarda ultimo tiempo para sumar segundos, referencia para llegando a fin de conteo
 char HHkey[1]; //Almacena temporalmente la hora en vector de dos posiciones
 char MMkey[1]; //Almacena temporalmente los minutos en vector de dos posiciones
 char SSkey[1]; //Almacena temporalmente los segundos en vector de dos posiciones
@@ -62,6 +64,9 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 unsigned long duracion = 100; //Controla el tiempo que dura el tono de avance de los segundos
 LiquidCrystal_I2C lcd(0x3F, 16, 2);
 
+/**
+ * 
+ */
 void sonido() {
     for (int iTono = 0; iTono < countTonos; iTono++) {
         tone(Buzzer, tonos[iTono]);
@@ -70,19 +75,72 @@ void sonido() {
     noTone(Buzzer);
 }
 
+/**
+ * 
+ */
 void setup() {
-    pinMode(Buzzer, OUTPUT);
-    pinMode(ledPin, OUTPUT); // LED que pulsa con cada segundo 
-    digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
-    tone(Buzzer, 100);
-    delay(500); // wait for a second
-    tone(Buzzer, 600);
-    delay(500); // wait for a second
-    noTone(Buzzer);
-    digitalWrite(LED_BUILTIN, LOW); // turn the LED off by making the voltage LOW
-    Serial.begin(9600);
+
+    Init();
+
+    //Seleccionamos las horas
+    bool check = false;
+    do {
+        check = SelectHours();
+    } while (!check);
+
+    //Seleccionamos los minutos
+    do {
+        check = SelectMinutes();
+    } while (!check);
+
+    //Seleccionamos los segundos
+    do {
+        check = SelectSeconds();
+    } while (!check);
+    //******************
+    SelectPassword();
+}
+
+/**
+ * 
+ */
+void loop() {
+    timer(); //conteo regresivo
+    char key2 = keypad.getKey(); // get the key
+
+    if (key2 == '*') { // en el caso de querer desactivar la bomba
+        TryDefusing();
+    }
+}
+
+/**
+ * función para inicializar difenrentes componentes como el lcd, buzzer y LEDs. Además muestra un mensaje de bienvenida.
+ */
+void Init() {
     lcd.init();
     lcd.backlight();
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Initializing");
+    delay(500);
+    lcd.setCursor(12, 0);
+    lcd.print(".");
+    pinMode(Buzzer, OUTPUT);
+    pinMode(ledPin, OUTPUT); // LED que pulsa con cada segundo
+    tone(Buzzer, GRAVE);
+    lcd.setCursor(13, 0);
+    lcd.print(".");
+    delay(500); // wait for half second
+    digitalWrite(LED_BUILTIN, HIGH); // enciende el LED (HIGH es el nivel del voltage)
+    tone(Buzzer, AGUDO);
+    lcd.setCursor(14, 0);
+    lcd.print(".");
+    delay(500); // wait for half second
+    noTone(Buzzer);
+    digitalWrite(LED_BUILTIN, LOW); // apaga el LED estableciendo el voltage en LOW
+    //Serial.begin(9600);
+    lcd.setCursor(0, 1);
+    lcd.print("Done!");
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Batallón 32");
@@ -90,8 +148,78 @@ void setup() {
     lcd.print("Strike Bomb");
     delay(3000);
     sonido();
+}
 
-    //**********************hh
+/**
+ * Funcion que gestiona el intento de desactivación de la bomba.
+ * Si se introduce una clave incorrecta establece el tiempo restante en 5 segundos
+ */
+void TryDefusing() {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Code: ");
+    while (currentLength < passLength) {
+        timer();
+        char key2 = keypad.getKey();
+        if (key2 == '#') {
+            currentLength = 0;
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print(F("Code: "));
+        } else if (key2 != NO_KEY) {
+            lcd.setCursor(currentLength + 7, 0);
+            lcd.cursor();
+            lcd.print(key2);
+            entered[currentLength] = key2;
+            currentLength++;
+            digitalWrite(LED_BUILTIN, HIGH); // encendemos el LED (HIGH es el nivel del voltaje)
+            tone(Buzzer, 250, 100);
+            delay(200);
+            digitalWrite(LED_BUILTIN, LOW); // apagamos el LED estableciendo el voltaje en LOW
+            lcd.noCursor();
+            lcd.setCursor(currentLength + 6, 0);
+            lcd.print("*");
+            lcd.setCursor(currentLength + 7, 0);
+            lcd.cursor();
+        }
+    }
+    if (currentLength == passLength) {
+        if (CheckPass()) {
+            lcd.noCursor();
+            lcd.clear();
+            lcd.home();
+            lcd.print("Bomb Defused"); // Bomba desarmada
+            currentLength = 0;
+            delay(2000);
+            lcd.setCursor(0, 1);
+            lcd.print("Reset the Bomb");
+            delay(1000000);
+        } else {
+            lcd.noCursor();
+            lcd.clear();
+            lcd.home();
+            lcd.print("Wrong Password!");
+            if (Hcount > 0) {
+                Hcount = 0; //Hcount = Hcount - 1;
+            }
+
+            if (Mcount > 0) {
+                Mcount = 0; //Mcount = Mcount - 59;
+            }
+            if (Scount > 0) {
+                Scount = 5; //Scount = Scount - 59;
+            }
+            delay(1500);
+            currentLength = 0;
+        }
+    }
+}
+
+/**
+ * funcion para selccionar las horas en el temporizador
+ * @return true si es un valor válido false si es inválido
+ */
+bool SelectHours() {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Enter Countdown");
@@ -137,14 +265,27 @@ void setup() {
         lcd.clear();
         currentLength = 0;
     }
-    //**********************
-    //**********************
+    if (Hcount > 60) {
+        lcd.clear();
+        lcd.home();
+        lcd.print("ERROR");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * funcion para selccionar los minutos en el temporizador
+ * @return true si es un valor válido false si es inválido
+ */
+bool SelectMinutes() {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Enter Countdown");
     lcd.setCursor(0, 1);
     lcd.print("Minutes: 00");
     lcd.setCursor(11, 1);
+
     while (currentLength < 2) {
         lcd.setCursor(currentLength + 9, 1);
         lcd.cursor();
@@ -176,8 +317,20 @@ void setup() {
         lcd.clear();
         currentLength = 0;
     }
-    //******************
-    //**********************ss
+    if (Mcount > 60) {
+        lcd.clear();
+        lcd.home();
+        lcd.print("ERROR");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * funcion para selccionar los segundos en el temporizador
+ * @return true si es un valor válido false si es inválido
+ */
+bool SelectSeconds() {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Enter Countdown");
@@ -215,7 +368,19 @@ void setup() {
         lcd.clear();
         currentLength = 0;
     }
-    //******************
+    if (Scount > 60) {
+        lcd.clear();
+        lcd.home();
+        lcd.print("ERROR");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Función para elegir la contraseña de desactivación
+ */
+void SelectPassword() {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Enter defusing ");
@@ -245,98 +410,31 @@ void setup() {
         lcd.home();
         lcd.print("You've Entered: ");
         lcd.setCursor(6, 1);
-        lcd.print(password[0]);
-        lcd.print(password[1]);
-        lcd.print(password[2]);
-        lcd.print(password[3]);
+        for (int i = 0; i < passLength; ++i) {
+            lcd.print(password[i]);
+        }
         delay(2000);
         lcd.clear();
         currentLength = 0;
     }
 }
 
-void loop() {
-    timer(); //conteo regresivo
-    char key2 = keypad.getKey(); // get the key
-
-    if (key2 == '*') // en el caso de querer desarmar la bomba
-    {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Code: ");
-        while (currentLength < passLength) {
-            timer();
-            char key2 = keypad.getKey();
-            if (key2 == '#') {
-                currentLength = 0;
-                lcd.clear();
-                lcd.setCursor(0, 0);
-                lcd.print(F("Code: "));
-            } else if (key2 != NO_KEY) {
-                lcd.setCursor(currentLength + 7, 0);
-                lcd.cursor();
-                lcd.print(key2);
-                entered[currentLength] = key2;
-                currentLength++;
-                digitalWrite(LED_BUILTIN, HIGH); // turn the LED on (HIGH is the voltage level)
-                tone(Buzzer, 250, 100);
-                delay(200);
-                digitalWrite(LED_BUILTIN, LOW); // turn the LED off by making the voltage LOW
-                lcd.noCursor();
-                lcd.setCursor(currentLength + 6, 0);
-                lcd.print("*");
-                lcd.setCursor(currentLength + 7, 0);
-                lcd.cursor();
-            }
-        }
-        if (currentLength == passLength) {
-            if (entered[0] == password[0] && entered[1] == password[1] && entered[2] == password[2] && entered[3] == password[3]) {
-                lcd.noCursor();
-                lcd.clear();
-                lcd.home();
-                lcd.print("Bomb Defused"); // Bomba desarmada
-                currentLength = 0;
-                delay(2000);
-                lcd.setCursor(0, 1);
-                lcd.print("Reset the Bomb");
-                delay(1000000);
-            } else {
-                lcd.noCursor();
-                lcd.clear();
-                lcd.home();
-                lcd.print("Wrong Password!");
-                if (Hcount > 0) {
-                    Hcount = 0; //Hcount = Hcount - 1;
-                }
-
-                if (Mcount > 0) {
-                    Mcount = 0; //Mcount = Mcount - 59;
-                }
-                if (Scount > 0) {
-                    Scount = 5; //Scount = Scount - 59;
-                }
-                delay(1500);
-                currentLength = 0;
-            }
-        }
-    }
-}
-
+/**
+ * Un temporizador con el siguiente formato HH:MM:SS
+ */
 void timer() {
-    if (Hcount <= 0) {
-        if (Mcount < 0) {
-            lcd.noCursor();
-            lcd.clear();
-            lcd.home();
-            lcd.print("The Bomb Has ");
-            lcd.setCursor(0, 1);
-            lcd.print("Exploded!");
-            while (Mcount < 0) {
-                tone(Buzzer, 650);
-                digitalWrite(13, HIGH); //LED ON
-                delay(1000);
-                delay(2000);
-            }
+    if (Hcount <= 0 && Mcount < 0) {
+        lcd.noCursor();
+        lcd.clear();
+        lcd.home();
+        lcd.print("The Bomb Has ");
+        lcd.setCursor(0, 1);
+        lcd.print("Exploded!");
+        while (Mcount < 0) {
+            tone(Buzzer, 650);
+            digitalWrite(13, HIGH); //LED ON
+            delay(1000);
+            delay(2000);
         }
     }
     lcd.setCursor(0, 1);
@@ -409,4 +507,17 @@ void timer() {
             digitalWrite(13, LOW); //LED OFF
         }
     }
+}
+
+/**
+ * Función para comprobar si la contraseña intruducida es correcta
+ * @return true si coinciden false si no coinciden
+ */
+bool CheckPass() {
+    for (int i = 0; i < passLength; ++i) {
+        if (entered[i] != password[i]) {
+            return false;
+        }
+    }
+    return true;
 }
